@@ -21,7 +21,7 @@ from app.services.validation_service import (
 )
 
 
-def process_discharge_report_upload(
+def upload_and_extract_discharge_report(
     db: Session,
     user: User,
     filename: str | None,
@@ -58,7 +58,7 @@ def process_discharge_report_upload(
     db.commit()
     db.refresh(report)
 
-    # Step 1: Extract text (PyMuPDF + OCR fallback)
+    # Step 1: Extract text (PyMuPDF + OCR fallback) independently of Gemini
     report.processing_status = "Extracting"
     db.commit()
 
@@ -69,15 +69,32 @@ def process_discharge_report_upload(
         )
         report.extracted_text = extracted_text
         report.extraction_method = extraction_method
-        report.processing_status = "Processing"
+        report.processing_status = "Extracted"
         db.commit()
+        db.refresh(report)
     except AppError as exc:
         report.processing_status = "Failed"
         report.error_message = exc.message
         db.commit()
+        db.refresh(report)
+
+    return report
+
+
+def generate_and_save_care_plan_for_report(
+    db: Session,
+    user: User,
+    report: DischargeReport,
+    output_language: str | None = None,
+) -> DischargeReport:
+    if report.processing_status == "Failed" or not report.extracted_text:
         return report
 
-    # Step 2: Prevent duplicate care plans if already created for this report
+    target_language = output_language or report.output_language or "English"
+    extracted_text = report.extracted_text
+    patient = user.primary_patient
+
+    # Prevent duplicate care plans if already created for this report
     existing_plan = db.scalar(
         select(CarePlan).where(CarePlan.discharge_report_id == report.id)
     )
@@ -86,19 +103,27 @@ def process_discharge_report_upload(
         db.commit()
         return report
 
-    # Step 3: Gemini AI Care Plan generation
+    report.processing_status = "Processing"
+    db.commit()
+
+    # Step 2: Lazy Gemini AI Care Plan generation
     try:
         ai_payload = generate_care_plan_from_text(
             extracted_text=extracted_text,
-            requested_language=output_language,
+            requested_language=target_language,
         )
     except AppError as exc:
+        if exc.code == "ai_not_configured":
+            report.processing_status = "Extracted"
+            report.error_message = exc.message
+            db.commit()
+            raise
         report.processing_status = "Failed"
         report.error_message = exc.message
         db.commit()
         return report
 
-    # Step 4: Deterministic Medical Safety & Validation
+    # Step 3: Deterministic Medical Safety & Validation
     validation = validate_care_plan_against_source(
         source_text=extracted_text,
         plan=ai_payload,
@@ -161,6 +186,7 @@ def process_discharge_report_upload(
             )
         )
 
+    report.error_message = None
     report.processing_status = (
         "Completed"
         if validation.validation_status == VERIFIED_STATUS
@@ -169,3 +195,29 @@ def process_discharge_report_upload(
     db.commit()
     db.refresh(report)
     return report
+
+
+def process_discharge_report_upload(
+    db: Session,
+    user: User,
+    filename: str | None,
+    content_type: str | None,
+    raw_bytes: bytes,
+    output_language: str = "English",
+) -> DischargeReport:
+    report = upload_and_extract_discharge_report(
+        db=db,
+        user=user,
+        filename=filename,
+        content_type=content_type,
+        raw_bytes=raw_bytes,
+        output_language=output_language,
+    )
+    if report.processing_status == "Failed":
+        return report
+    return generate_and_save_care_plan_for_report(
+        db=db,
+        user=user,
+        report=report,
+        output_language=output_language,
+    )

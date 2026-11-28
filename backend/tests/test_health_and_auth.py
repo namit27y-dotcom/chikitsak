@@ -9,7 +9,35 @@ def test_health_check_endpoint(client: TestClient) -> None:
     data = response.json()
     assert data["status"] == "ok"
     assert data["database"] == "connected"
+    assert "ai_configured" in data
+    assert "configuration" in data
+    assert "GEMINI_API_KEY" not in str(data)
     assert "DATABASE_URL" not in str(data)
+    assert "test-gemini-key" not in str(data)
+
+
+def test_backend_starts_and_serves_health_without_gemini_api_key(
+    client: TestClient,
+    monkeypatch,
+) -> None:
+    from app.core.config import get_settings
+
+    monkeypatch.setenv("GEMINI_API_KEY", "")
+    get_settings.cache_clear()
+
+    response = client.get("/health")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "ok"
+    assert data["database"] == "connected"
+    assert data["ai_configured"] is False
+    assert data["configuration"]["gemini_configured"] is False
+    assert data["configuration"]["database_configured"] is True
+
+    # Auth and dashboard remain functional without GEMINI_API_KEY
+    headers = register_and_get_headers(client, email="nokey-boot@example.com")
+    overview = client.get("/api/v1/dashboard/overview", headers=headers)
+    assert overview.status_code == 200
 
 
 def test_register_login_and_me_flow(client: TestClient) -> None:

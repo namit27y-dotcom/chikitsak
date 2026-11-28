@@ -13,6 +13,7 @@ class DischargeReportResponse(BaseModel):
     output_language: str
     processing_status: str
     extraction_method: Optional[str] = None
+    extracted_text_preview: Optional[str] = None
     error_message: Optional[str] = None
     care_plan_id: Optional[int] = None
     created_at: datetime

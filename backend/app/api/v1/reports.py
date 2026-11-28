@@ -8,12 +8,17 @@ from app.db.session import get_db
 from app.models.discharge_report import DischargeReport
 from app.models.user import User
 from app.schemas.report import DischargeReportResponse, ReportStatusResponse
-from app.services.care_plan_service import process_discharge_report_upload
+from app.services.care_plan_service import (
+    generate_and_save_care_plan_for_report,
+    process_discharge_report_upload,
+    upload_and_extract_discharge_report,
+)
 
 router = APIRouter(prefix="/reports", tags=["Discharge Reports"])
 
 
 def _serialize_report(report: DischargeReport) -> DischargeReportResponse:
+    preview = report.extracted_text[:600] if report.extracted_text else None
     return DischargeReportResponse(
         id=report.id,
         original_filename=report.original_filename,
@@ -22,11 +27,68 @@ def _serialize_report(report: DischargeReport) -> DischargeReportResponse:
         output_language=report.output_language,
         processing_status=report.processing_status,
         extraction_method=report.extraction_method,
+        extracted_text_preview=preview,
         error_message=report.error_message,
         care_plan_id=report.care_plan.id if report.care_plan else None,
         created_at=report.created_at,
         updated_at=report.updated_at,
     )
+
+
+@router.post("/extract", response_model=DischargeReportResponse, status_code=201)
+async def extract_report_only(
+    file: UploadFile = File(...),
+    output_language: str = Form("English"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> DischargeReportResponse:
+    """Upload PDF/image and extract text independently without calling Gemini AI."""
+    raw_bytes = await file.read()
+    report = upload_and_extract_discharge_report(
+        db=db,
+        user=current_user,
+        filename=file.filename,
+        content_type=file.content_type,
+        raw_bytes=raw_bytes,
+        output_language=output_language,
+    )
+    reloaded = db.scalar(
+        select(DischargeReport)
+        .options(selectinload(DischargeReport.care_plan))
+        .where(DischargeReport.id == report.id)
+    )
+    return _serialize_report(reloaded or report)
+
+
+@router.post("/{report_id}/generate-care-plan", response_model=DischargeReportResponse)
+def generate_care_plan_for_existing_report(
+    report_id: int,
+    output_language: str | None = None,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> DischargeReportResponse:
+    report = db.scalar(
+        select(DischargeReport)
+        .options(selectinload(DischargeReport.care_plan))
+        .where(
+            DischargeReport.id == report_id,
+            DischargeReport.user_id == current_user.id,
+        )
+    )
+    if report is None:
+        raise AppError("Discharge report not found.", status_code=404, code="report_not_found")
+    updated = generate_and_save_care_plan_for_report(
+        db=db,
+        user=current_user,
+        report=report,
+        output_language=output_language,
+    )
+    reloaded = db.scalar(
+        select(DischargeReport)
+        .options(selectinload(DischargeReport.care_plan))
+        .where(DischargeReport.id == updated.id)
+    )
+    return _serialize_report(reloaded or updated)
 
 
 @router.post("/upload", response_model=DischargeReportResponse, status_code=201)

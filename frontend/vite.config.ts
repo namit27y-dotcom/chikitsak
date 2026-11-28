@@ -2,16 +2,21 @@ import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import fs from 'fs';
 import path from 'path';
+import {fileURLToPath} from 'url';
 import {defineConfig} from 'vite';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 export default defineConfig(() => {
+  const proxyTarget = process.env.VITE_DEV_PROXY_TARGET?.trim();
+
   return {
     plugins: [
       react(),
       tailwindcss(),
       // Copies src/assets into dist/ so root-relative URLs like
-      // "/src/assets/images/..." (e.g. generate_image output) still resolve
-      // in production builds. Do not remove.
+      // "/src/assets/images/..." still resolve in production builds. Do not remove.
       {
         name: 'copy-unbundled-src-assets',
         apply: 'build',
@@ -34,21 +39,27 @@ export default defineConfig(() => {
       },
     },
     server: {
+      port: 3000,
+      host: '0.0.0.0',
       // HMR is disabled in AI Studio via DISABLE_HMR env var.
       // Do not modify—file watching is disabled to prevent flickering during agent edits.
       hmr: process.env.DISABLE_HMR !== 'true',
       // Disable file watching when DISABLE_HMR is true to save CPU during agent edits.
       watch: process.env.DISABLE_HMR === 'true' ? null : {},
-      proxy: {
-        '/api/v1': {
-          target: 'http://127.0.0.1:8000',
-          changeOrigin: true,
-        },
-        '/health': {
-          target: 'http://127.0.0.1:8000',
-          changeOrigin: true,
-        },
-      },
+      ...(proxyTarget
+        ? {
+            proxy: {
+              '/api/v1': {
+                target: proxyTarget,
+                changeOrigin: true,
+              },
+              '/health': {
+                target: proxyTarget,
+                changeOrigin: true,
+              },
+            },
+          }
+        : {}),
     },
   };
 });

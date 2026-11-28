@@ -13,6 +13,7 @@ import {
   apiRequest,
   getApiBaseUrl,
   getAuthToken,
+  isBackendConfigured,
   setAuthToken,
 } from './apiClient';
 
@@ -149,7 +150,12 @@ export interface BackendReportStatus {
 
 export interface BackendAnalysisResponse {
   backendConnected: boolean;
-  status: 'analyzed' | 'auth_required' | 'backend_unavailable' | 'error';
+  status:
+    | 'analyzed'
+    | 'auth_required'
+    | 'backend_unavailable'
+    | 'ai_not_configured'
+    | 'error';
   message: string;
   carePlan?: CarePlan;
   endpointUrl: string;
@@ -460,10 +466,24 @@ export const carePlanService = {
     return getApiBaseUrl();
   },
 
+  isConfigured(): boolean {
+    return isBackendConfigured();
+  },
+
   async submitReportForAnalysis(
     file: File,
     meta: UploadedReportFile
   ): Promise<BackendAnalysisResponse> {
+    if (!isBackendConfigured()) {
+      return {
+        backendConnected: false,
+        status: 'backend_unavailable',
+        endpointUrl: 'Not configured (VITE_API_BASE_URL)',
+        message:
+          'Backend API URL is not configured for this environment (VITE_API_BASE_URL is not set). Configure VITE_API_BASE_URL with your FastAPI /api/v1 endpoint to upload and analyze discharge summaries.',
+      };
+    }
+
     const endpointUrl = `${getApiBaseUrl()}/reports/upload`;
 
     if (!getAuthToken()) {
@@ -534,13 +554,15 @@ export const carePlanService = {
       };
     } catch (err) {
       if (err instanceof ApiError) {
-        if (err.isNetworkError) {
+        if (err.isNetworkError || err.code === 'backend_not_configured') {
           return {
             backendConnected: false,
             status: 'backend_unavailable',
             endpointUrl,
             message:
-              'Unable to reach the FastAPI backend server. Ensure Uvicorn is running on port 8000.',
+              err.code === 'backend_not_configured'
+                ? err.message
+                : 'Unable to reach the configured FastAPI backend server. Verify the backend is running and VITE_API_BASE_URL is reachable.',
           };
         }
         if (err.status === 401) {
@@ -549,6 +571,16 @@ export const carePlanService = {
             status: 'auth_required',
             endpointUrl,
             message: 'Your session expired. Please sign in again to process reports.',
+          };
+        }
+        if (err.status === 503 || err.code === 'ai_not_configured') {
+          return {
+            backendConnected: true,
+            status: 'ai_not_configured',
+            endpointUrl,
+            message:
+              err.message ||
+              'AI service is not configured. Please configure GEMINI_API_KEY on the backend server.',
           };
         }
         return {

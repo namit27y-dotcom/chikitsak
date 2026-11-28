@@ -31,14 +31,19 @@ def _normalize_output_language(language: str) -> Literal["English", "Hindi"]:
     return "English"
 
 
+def is_gemini_configured() -> bool:
+    settings = get_settings()
+    return bool(settings.GEMINI_API_KEY and settings.GEMINI_API_KEY.strip())
+
+
 def generate_care_plan_from_text(
     extracted_text: str,
     requested_language: str = "English",
 ) -> GeminiCarePlanPayload:
     settings = get_settings()
-    if not settings.GEMINI_API_KEY:
+    if not settings.GEMINI_API_KEY or not settings.GEMINI_API_KEY.strip():
         raise AppError(
-            "Gemini AI API key is not configured on the backend server.",
+            "AI service is not configured. Please configure GEMINI_API_KEY.",
             status_code=503,
             code="ai_not_configured",
         )

@@ -236,17 +236,41 @@ def test_hindi_care_plan_and_ai_failure_handling(
     assert failed.json()["processing_status"] == "Failed"
     assert failed.json()["care_plan_id"] is None
 
-    # Missing Gemini API key marks report Failed cleanly
+    # Missing Gemini API key: independent extraction succeeds, AI care-plan generation returns HTTP 503
     monkeypatch.setenv("GEMINI_API_KEY", "")
     get_settings.cache_clear()
+
+    extract_only = client.post(
+        "/api/v1/reports/extract",
+        headers=headers,
+        files={"file": ("extract_only.pdf", pdf_bytes, "application/pdf")},
+    )
+    assert extract_only.status_code == 201
+    assert extract_only.json()["processing_status"] == "Extracted"
+    assert extract_only.json()["extraction_method"] == "pymupdf"
+    assert "Paracetamol" in (extract_only.json()["extracted_text_preview"] or "")
+
+    gen_missing_key = client.post(
+        f"/api/v1/reports/{extract_only.json()['id']}/generate-care-plan",
+        headers=headers,
+    )
+    assert gen_missing_key.status_code == 503
+    assert (
+        gen_missing_key.json()["detail"]
+        == "AI service is not configured. Please configure GEMINI_API_KEY."
+    )
+
     no_key = client.post(
         "/api/v1/reports/upload",
         headers=headers,
         files={"file": ("no_key.pdf", pdf_bytes, "application/pdf")},
     )
-    assert no_key.status_code == 201
-    assert no_key.json()["processing_status"] == "Failed"
-    assert "not configured" in no_key.json()["error_message"]
+    assert no_key.status_code == 503
+    assert (
+        no_key.json()["detail"]
+        == "AI service is not configured. Please configure GEMINI_API_KEY."
+    )
+    assert no_key.json()["code"] == "ai_not_configured"
 
 
 def test_image_ocr_and_blank_image_rejection(

@@ -154,9 +154,11 @@ export const ProcessingScreen: React.FC<ProcessingScreenProps> = ({
                       <h2 className="font-sans text-[16px] font-semibold text-[#153D32]">
                         {result.status === 'auth_required'
                           ? 'Sign In Required to Process Report'
+                          : result.status === 'ai_not_configured'
+                          ? 'AI Service Not Configured'
                           : result.status === 'error'
                           ? 'Unable to Process Discharge Summary'
-                          : 'Backend AI Service Unavailable'}
+                          : 'Backend API Unavailable'}
                       </h2>
                       <p className="text-[13.5px] text-[#25312C]/85 mt-1 leading-relaxed">
                         {result.message}

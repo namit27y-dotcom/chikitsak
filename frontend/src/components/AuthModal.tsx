@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { AlertCircle, Loader2, Lock, Mail, User, X } from 'lucide-react';
 import { authApi, BackendUser } from '../services/api/carePlanService';
-import { ApiError } from '../services/api/apiClient';
+import { ApiError, isBackendConfigured } from '../services/api/apiClient';
 import { ChikitsakLogoMark } from './BrandLogo';
 
 interface AuthModalProps {
@@ -27,6 +27,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [bloodGroup, setBloodGroup] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const backendConfigured = isBackendConfigured();
 
   if (!isOpen) return null;
 
@@ -89,6 +90,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             </p>
           </div>
         </div>
+
+        {!backendConfigured && (
+          <div className="mb-4 rounded-xl bg-[#FDFBF4] border border-[#E6D9B8] px-3.5 py-2.5 text-[12.5px] text-[#25312C]">
+            <strong className="text-[#153D32]">Backend API not configured:</strong>{' '}
+            Set <code className="px-1 py-0.5 rounded bg-[#F5F6F1]">VITE_API_BASE_URL</code> to
+            your FastAPI <code className="px-1 py-0.5 rounded bg-[#F5F6F1]">/api/v1</code> URL to
+            enable sign-in and report uploads. Demo mode remains usable offline.
+          </div>
+        )}
 
         {contextMessage && (
           <div className="mb-4 rounded-xl bg-[#F7F4EA] border border-[#E5DEC9] px-3.5 py-2.5 text-[12.5px] text-[#25312C]">

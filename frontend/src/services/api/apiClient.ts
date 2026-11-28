@@ -24,12 +24,20 @@ export class ApiError extends Error {
   }
 }
 
-export function getApiBaseUrl(): string {
+export function getConfiguredApiBaseUrl(): string | null {
   const configured = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.trim();
-  if (configured) {
-    return configured.replace(/\/$/, '');
+  if (!configured || configured === 'MY_API_URL') {
+    return null;
   }
-  return '/api/v1';
+  return configured.replace(/\/$/, '');
+}
+
+export function isBackendConfigured(): boolean {
+  return getConfiguredApiBaseUrl() !== null;
+}
+
+export function getApiBaseUrl(): string {
+  return getConfiguredApiBaseUrl() ?? '';
 }
 
 export function getAuthToken(): string | null {
@@ -44,7 +52,16 @@ export async function apiRequest<T>(
   path: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const baseUrl = getApiBaseUrl();
+  const baseUrl = getConfiguredApiBaseUrl();
+  if (!baseUrl) {
+    throw new ApiError(
+      'Backend API URL is not configured (VITE_API_BASE_URL is unset). Demo mode remains available offline; set VITE_API_BASE_URL to your FastAPI /api/v1 URL to enable account sync and discharge report processing.',
+      503,
+      'backend_not_configured',
+      true
+    );
+  }
+
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
   const url = `${baseUrl}${normalizedPath}`;
 
@@ -89,31 +106,48 @@ export async function apiRequest<T>(
 }
 
 export async function checkBackendHealth(): Promise<{
+  configured: boolean;
   reachable: boolean;
   status: string;
   database: string;
+  aiConfigured: boolean;
 }> {
-  const baseUrl = getApiBaseUrl();
+  const baseUrl = getConfiguredApiBaseUrl();
+  if (!baseUrl) {
+    return {
+      configured: false,
+      reachable: false,
+      status: 'not_configured',
+      database: 'unavailable',
+      aiConfigured: false,
+    };
+  }
+
   const healthUrl = baseUrl.endsWith('/api/v1')
     ? `${baseUrl.slice(0, -7)}/health`
-    : '/health';
+    : `${baseUrl}/health`;
 
   try {
     const resp = await fetch(healthUrl);
     const data = (await resp.json().catch(() => null)) as {
       status?: string;
       database?: string;
+      ai_configured?: boolean;
     } | null;
     return {
+      configured: true,
       reachable: true,
       status: data?.status ?? (resp.ok ? 'ok' : 'degraded'),
       database: data?.database ?? 'unknown',
+      aiConfigured: Boolean(data?.ai_configured),
     };
   } catch {
     return {
+      configured: true,
       reachable: false,
       status: 'offline',
       database: 'unavailable',
+      aiConfigured: false,
     };
   }
 }

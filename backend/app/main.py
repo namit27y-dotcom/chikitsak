@@ -30,11 +30,23 @@ def create_app() -> FastAPI:
 
     @app.get("/health", tags=["Health"])
     def health_check() -> JSONResponse:
+        current_settings = get_settings()
         db_ok, db_status = check_database_connectivity()
+        gemini_configured = bool(
+            current_settings.GEMINI_API_KEY and current_settings.GEMINI_API_KEY.strip()
+        )
         payload = {
             "status": "ok" if db_ok else "degraded",
             "service": "chikitsak-api",
             "database": db_status,
+            "ai_configured": gemini_configured,
+            "configuration": {
+                "database_configured": bool(
+                    current_settings.DATABASE_URL and current_settings.DATABASE_URL.strip()
+                ),
+                "gemini_configured": gemini_configured,
+                "gemini_model": current_settings.GEMINI_MODEL,
+            },
         }
         return JSONResponse(status_code=200 if db_ok else 503, content=payload)
 
