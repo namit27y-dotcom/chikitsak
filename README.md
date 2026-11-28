@@ -166,10 +166,8 @@ flowchart LR
 CHIKITSAK/
 ├── README.md
 ├── package.json                       # Root workspace scripts delegating to frontend/
-├── metadata.json                      # Application metadata
 ├── vercel.json                        # Vercel frontend deployment config (frontend/dist)
 ├── .gitignore
-├── .env.example
 │
 ├── frontend/                          # Independent React + Vite + TypeScript SPA
 │   ├── index.html

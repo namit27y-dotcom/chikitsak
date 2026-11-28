@@ -70,37 +70,24 @@ export const MedicalShieldIllustration: React.FC<{ className?: string }> = ({
     className={className}
     aria-hidden="true"
   >
-    {/* Subtle botanical leaves behind shield */}
-    <path
-      d="M28 74C16 64 13 48 21 35C32 42 36 58 31 73Z"
-      fill="#A8C9A9"
-      fillOpacity="0.65"
-    />
-    <path
-      d="M92 74C104 64 107 48 99 35C88 42 84 58 89 73Z"
-      fill="#A8C9A9"
-      fillOpacity="0.65"
-    />
-    <path
-      d="M22 86C14 78 13 67 19 59C27 65 29 76 24 85Z"
-      fill="#8CB890"
-      fillOpacity="0.55"
-    />
-    <path
-      d="M98 86C106 78 107 67 101 59C93 65 91 76 96 85Z"
-      fill="#8CB890"
-      fillOpacity="0.55"
-    />
-    {/* Outer soft glow ring */}
-    <circle cx="60" cy="58" r="36" fill="#DCE9DC" fillOpacity="0.7" />
+    <defs>
+      <linearGradient id="shieldGreen" x1="32" y1="22" x2="88" y2="96" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stopColor="#3B935E" />
+        <stop offset="100%" stopColor="#1B643D" />
+      </linearGradient>
+    </defs>
+    {/* Soft outer white-green glow halo */}
+    <circle cx="60" cy="58" r="42" fill="#FFFFFF" fillOpacity="0.65" />
+    <circle cx="60" cy="58" r="34" fill="#DCE9DC" fillOpacity="0.65" />
     {/* Medical Shield */}
     <path
       d="M60 22L88 33V57C88 76.5 75.8 92.2 60 98C44.2 92.2 32 76.5 32 57V33L60 22Z"
-      fill="#153D32"
+      fill="url(#shieldGreen)"
     />
     <path
       d="M60 26.5L83.5 35.8V56.8C83.5 73.5 73.2 87.2 60 92.5V26.5Z"
-      fill="#1D4E3F"
+      fill="#155333"
+      fillOpacity="0.35"
     />
     {/* Crisp White Medical Cross */}
     <rect x="55" y="42" width="10" height="30" rx="2" fill="#FFFFFF" />

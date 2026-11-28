@@ -8,7 +8,6 @@ import {
   Check,
   ChevronDown,
   Clock,
-  FileCheck2,
   FileText,
   Globe,
   HeartHandshake,
@@ -17,13 +16,13 @@ import {
   RotateCcw,
   ShieldCheck,
   Sun,
-  Trash2,
   Upload,
   Volume2,
   Zap,
 } from 'lucide-react';
 import { CarePlan, MedicineInstruction, ScreenId } from '../../types/chikitsak';
 import { MedicalShieldIllustration } from '../BrandLogo';
+import heroConsultationImg from '../../assets/images/hero_medical_consultation_1795710975367.jpg';
 
 interface DashboardScreenProps {
   carePlans: CarePlan[];
@@ -45,7 +44,6 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   activePlan,
   onToggleMedicine,
   onNavigate,
-  onClearDemoData,
   onRestoreDemoData,
   unreadRemindersCount,
   completionPercent,
@@ -55,21 +53,28 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   totalAppointmentsCount,
 }) => {
   const [overviewRange, setOverviewRange] = useState<
-    'Today' | 'Last 7 Days' | 'Since Discharge'
-  >('Today');
+    'Last 7 Days' | 'Today' | 'Since Discharge'
+  >('Last 7 Days');
   const [rangeMenuOpen, setRangeMenuOpen] = useState(false);
 
   const recentPlan = carePlans[0] ?? activePlan;
-  const hasDemoRecords = carePlans.some((p) => p.isDemo);
 
   const dashboardMedicines: MedicineInstruction[] = activePlan
     ? activePlan.medicines.filter((m) => m.showOnDashboard).slice(0, 3)
     : [];
 
+  const displayedCompletionPercent =
+    activePlan?.isDemo && overviewRange !== 'Today'
+      ? Math.min(
+          100,
+          Math.round(((takenDosesCount + 9) / (totalDosesCount + 7)) * 100)
+        )
+      : completionPercent;
+
   const ringRadius = 38;
   const ringCircumference = 2 * Math.PI * ringRadius;
   const ringOffset =
-    ringCircumference - (completionPercent / 100) * ringCircumference;
+    ringCircumference - (displayedCompletionPercent / 100) * ringCircumference;
 
   const featureCards = [
     {
@@ -105,65 +110,66 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         {/* Hero Banner */}
         <section
           aria-label="Welcome Hero"
-          className="relative rounded-[20px] overflow-hidden border border-[#E2E8DC] bg-[#F7F4EA] min-h-[260px] lg:min-h-[288px] xl:min-h-[304px] flex items-center shadow-[0_2px_14px_rgba(21,61,50,0.04)]"
+          className="relative rounded-[20px] overflow-hidden border border-[#E2E8DC] bg-[#F6F4EA] min-h-[268px] lg:min-h-[296px] xl:min-h-[312px] flex items-center shadow-[0_2px_14px_rgba(21,61,50,0.04)]"
         >
-          {/* CHIKITSAK Hero Photograph (Doctor & Elderly Patient) */}
+          {/* Medical Consultation Photograph (Right Side) */}
           <img
-            src="/assets/chikitsak-hero.png"
-            alt="Doctor explaining discharge summary instructions to an elderly patient"
-            className="absolute inset-0 w-full h-full object-cover object-[66%_18%] lg:object-[60%_16%]"
+            src={heroConsultationImg}
+            alt="Doctor holding patient hand and explaining discharge care instructions"
+            className="absolute inset-0 w-full h-full object-cover object-[74%_24%] lg:object-[70%_22%]"
           />
 
-          {/* Subtle Warm Ivory Overlay on Text Side for Readability */}
+          {/* Soft Warm Ivory Gradient Fade behind Left Typography */}
           <div
             aria-hidden="true"
-            className="absolute inset-0 bg-gradient-to-r from-[#F7F4EA] via-[#F7F4EA]/90 via-36% to-transparent"
+            className="absolute inset-0 bg-gradient-to-r from-[#F6F4EA] via-[#F6F4EA]/94 via-40% to-transparent"
           />
 
-          {/* Subtle Decorative Leaf Silhouettes */}
+          {/* Subtle Decorative Botanical Leaf Silhouette */}
           <svg
             aria-hidden="true"
             viewBox="0 0 220 180"
-            className="pointer-events-none absolute left-[34%] bottom-0 w-52 h-44 opacity-30"
+            className="pointer-events-none absolute left-[37%] bottom-0 w-48 h-44 opacity-40"
           >
             <path
-              d="M30 175C45 120 85 88 140 78C125 130 85 162 30 175Z"
-              fill="#7BAE80"
+              d="M36 176C52 120 88 86 144 74C126 128 90 162 36 176Z"
+              fill="#7BB37E"
             />
             <path
-              d="M10 155C10 112 36 74 78 58C80 102 52 138 10 155Z"
-              fill="#A5CBA8"
+              d="M14 156C14 110 40 72 82 54C84 100 56 138 14 156Z"
+              fill="#A3CCA6"
             />
           </svg>
 
-          {/* Curved Deep Forest Green Corner Accent */}
+          {/* Curved Deep Forest Green Bottom-Right Corner Accent */}
           <svg
             aria-hidden="true"
             viewBox="0 0 420 120"
-            className="pointer-events-none absolute right-0 bottom-0 w-[320px] xl:w-[380px] h-[90px]"
+            className="pointer-events-none absolute right-0 bottom-0 w-[300px] xl:w-[360px] h-[88px]"
             preserveAspectRatio="none"
           >
             <path
               d="M420 120H90C190 95 295 55 420 0V120Z"
-              fill="#153D32"
-              fillOpacity="0.9"
+              fill="#1E6B47"
+              fillOpacity="0.92"
             />
             <path
               d="M420 120H185C270 100 345 72 420 34V120Z"
-              fill="#2B6B4F"
-              fillOpacity="0.55"
+              fill="#153D32"
+              fillOpacity="0.85"
             />
           </svg>
 
-          <div className="relative z-10 px-7 lg:px-9 py-7 max-w-[540px]">
-            <h1 className="font-display text-[32px] lg:text-[36px] xl:text-[40px] font-semibold text-[#153D32] leading-[1.12] tracking-tight">
+          <div className="relative z-10 px-8 lg:px-10 py-8 max-w-[560px]">
+            <h1 className="font-display text-[34px] lg:text-[38px] xl:text-[42px] font-semibold text-[#153D32] leading-[1.12] tracking-tight">
               Better Understanding.
               <br />
               Healthier Tomorrow.
             </h1>
-            <p className="mt-3 text-[15px] text-[#25312C]/85 leading-relaxed max-w-[390px]">
-              Turn complex medical reports into simple, easy-to-follow care
-              instructions.
+            <p className="mt-3 text-[15.5px] text-[#25312C]/85 leading-relaxed max-w-[400px]">
+              Turn complex medical reports
+              <br />
+              into simple, easy-to-follow care instructions.
             </p>
             <button
               type="button"
@@ -175,50 +181,6 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             </button>
           </div>
         </section>
-
-        {/* Demo Data Transparency Strip */}
-        <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 rounded-2xl bg-[#F7F4EA] border border-[#E5DEC9] text-[12.5px]">
-          {carePlans.length > 0 && hasDemoRecords ? (
-            <>
-              <div className="flex items-center gap-2 text-[#25312C]/85">
-                <span className="px-2 py-0.5 rounded-md bg-[#D7BE8A]/45 text-[#0E3025] font-semibold text-[11px] uppercase tracking-wide">
-                  Demo Data
-                </span>
-                <span>
-                  Displaying sample discharge care records for preview. Upload a
-                  discharge summary to work with your own records.
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={onClearDemoData}
-                className="inline-flex items-center gap-1.5 text-[12px] font-medium text-[#153D32] hover:underline cursor-pointer whitespace-nowrap"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-                <span>Clear Demo Data</span>
-              </button>
-            </>
-          ) : carePlans.length === 0 ? (
-            <>
-              <span className="text-[#25312C]/80">
-                No patient discharge records loaded yet. Upload a report or load the
-                sample demo care plan to explore.
-              </span>
-              <button
-                type="button"
-                onClick={onRestoreDemoData}
-                className="inline-flex items-center gap-1.5 text-[12px] font-medium text-[#153D32] hover:underline cursor-pointer whitespace-nowrap"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-                <span>Load Demo Data</span>
-              </button>
-            </>
-          ) : (
-            <span className="text-[#153D32] font-medium">
-              Showing verified patient care plan records.
-            </span>
-          )}
-        </div>
 
         {/* 4 Feature Cards */}
         <section
@@ -234,8 +196,8 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                 onClick={() => onNavigate(card.target)}
                 className="group text-left bg-white hover:bg-[#FAFBF8] border border-[#EAECE6] hover:border-[#153D32]/25 rounded-2xl px-4 py-3.5 flex items-center gap-3.5 shadow-[0_1px_6px_rgba(21,61,50,0.03)] transition-all cursor-pointer"
               >
-                <div className="w-11 h-11 rounded-full bg-[#EAF1E7] group-hover:bg-[#DCE9DC] flex items-center justify-center shrink-0 transition-colors">
-                  <Icon className="w-5 h-5 text-[#153D32]" />
+                <div className="w-11 h-11 rounded-full bg-[#E6F2E8] group-hover:bg-[#DCE9DC] flex items-center justify-center shrink-0 transition-colors">
+                  <Icon className="w-5 h-5 text-[#1E6B47]" />
                 </div>
                 <div className="min-w-0">
                   <p className="text-[13.5px] font-semibold text-[#153D32] leading-snug">
@@ -256,7 +218,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           <section className="lg:col-span-7 bg-white border border-[#EAECE6] rounded-[20px] p-5 flex flex-col justify-between shadow-[0_1px_8px_rgba(21,61,50,0.03)]">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2.5">
-                <Activity className="w-5 h-5 text-[#153D32]" />
+                <Activity className="w-5 h-5 text-[#1E6B47]" />
                 <h2 className="font-sans text-[17px] font-semibold text-[#153D32]">
                   Your Recent Care Plans
                 </h2>
@@ -272,22 +234,18 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             </div>
 
             {recentPlan ? (
-              <div className="rounded-2xl bg-[#FAFBF8] border border-[#EAECE6] p-4 flex flex-wrap sm:flex-nowrap items-center justify-between gap-4">
+              <div className="rounded-2xl bg-[#FAFBF8] border border-[#ECEEE8] p-4 flex flex-wrap sm:flex-nowrap items-center justify-between gap-4">
                 <div className="flex items-center gap-4 min-w-0">
-                  <div className="relative w-14 h-14 rounded-2xl bg-[#EAF1E7] flex items-center justify-center shrink-0">
-                    <FileCheck2 className="w-7 h-7 text-[#153D32]" />
+                  <div className="relative w-14 h-14 rounded-2xl bg-[#E7F2E8] flex items-center justify-center shrink-0">
+                    <FileText className="w-7 h-7 text-[#1E6B47]" />
+                    <span className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-[#1E7E4E] text-white flex items-center justify-center ring-2 ring-[#FAFBF8]">
+                      <Check className="w-3 h-3 stroke-[3]" />
+                    </span>
                   </div>
                   <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="text-[16px] font-semibold text-[#153D32] truncate">
-                        {recentPlan.title}
-                      </p>
-                      {recentPlan.isDemo && (
-                        <span className="px-2 py-0.5 rounded bg-[#F7F4EA] border border-[#E5DEC9] text-[#8C6514] text-[10.5px] font-semibold shrink-0">
-                          Demo Data
-                        </span>
-                      )}
-                    </div>
+                    <p className="text-[16px] font-semibold text-[#153D32] truncate">
+                      {recentPlan.title}
+                    </p>
                     <p className="text-[12.5px] text-[#25312C]/65 mt-0.5 tabular-nums">
                       {recentPlan.createdAt}
                     </p>
@@ -295,7 +253,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                 </div>
 
                 <div className="flex items-center gap-3 shrink-0">
-                  <span className="px-3.5 py-1 rounded-full bg-[#EAF1E7] text-[#153D32] text-[12px] font-medium">
+                  <span className="px-3.5 py-1 rounded-full bg-[#DCF0E2] text-[#1E6B47] text-[12px] font-medium">
                     {recentPlan.status}
                   </span>
                   <button
@@ -315,17 +273,27 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                     No Patient Care Plans Yet
                   </p>
                   <p className="text-[12.5px] text-[#25312C]/65 mt-0.5">
-                    Upload a hospital discharge summary to view structured guidance.
+                    Upload a hospital discharge summary or reload sample records.
                   </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => onNavigate('upload')}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#153D32] text-white text-[12.5px] font-medium cursor-pointer shrink-0 self-start sm:self-auto"
-                >
-                  <Upload className="w-3.5 h-3.5" />
-                  <span>Upload Report</span>
-                </button>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={onRestoreDemoData}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full border border-[#DCE9DC] bg-white text-[#153D32] text-[12px] font-medium cursor-pointer"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    <span>Load Sample</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onNavigate('upload')}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#153D32] text-white text-[12.5px] font-medium cursor-pointer"
+                  >
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>Upload Report</span>
+                  </button>
+                </div>
               </div>
             )}
           </section>
@@ -334,15 +302,10 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           <section className="lg:col-span-5 bg-white border border-[#EAECE6] rounded-[20px] p-5 flex flex-col justify-between shadow-[0_1px_8px_rgba(21,61,50,0.03)]">
             <div className="flex items-center justify-between mb-3 gap-2">
               <div className="flex items-center gap-2">
-                <BarChart2 className="w-5 h-5 text-[#153D32]" />
+                <BarChart2 className="w-5 h-5 text-[#1E6B47]" />
                 <h2 className="font-sans text-[17px] font-semibold text-[#153D32]">
                   Health Overview
                 </h2>
-                {hasDemoRecords && (
-                  <span className="px-2 py-0.5 rounded bg-[#F7F4EA] text-[#8C6514] text-[10px] font-semibold">
-                    Demo
-                  </span>
-                )}
               </div>
 
               <div className="relative">
@@ -356,7 +319,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                 </button>
                 {rangeMenuOpen && (
                   <div className="absolute right-0 mt-1.5 w-36 rounded-xl bg-white border border-[#E2E6DC] shadow-lg py-1 z-20">
-                    {(['Today', 'Last 7 Days', 'Since Discharge'] as const).map(
+                    {(['Last 7 Days', 'Today', 'Since Discharge'] as const).map(
                       (opt) => (
                         <button
                           key={opt}
@@ -381,10 +344,10 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             </div>
 
             {recentPlan ? (
-              <div className="flex items-center justify-between gap-4">
-                {/* Circular Completion Ring computed directly from recorded doses */}
+              <div className="flex items-center justify-between gap-5">
+                {/* Circular Completion Ring */}
                 <div className="flex flex-col items-center shrink-0">
-                  <div className="relative w-[94px] h-[94px] flex items-center justify-center">
+                  <div className="relative w-[96px] h-[96px] flex items-center justify-center">
                     <svg className="w-full h-full -rotate-90" viewBox="0 0 94 94">
                       <circle
                         cx="47"
@@ -399,7 +362,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                         cy="47"
                         r={ringRadius}
                         fill="none"
-                        stroke="#153D32"
+                        stroke="#1E6B47"
                         strokeWidth="8"
                         strokeLinecap="round"
                         strokeDasharray={ringCircumference}
@@ -408,17 +371,17 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                       />
                     </svg>
                     <span className="absolute text-[22px] font-bold text-[#153D32] tabular-nums">
-                      {completionPercent}%
+                      {displayedCompletionPercent}%
                     </span>
                   </div>
-                  <p className="text-[11.5px] font-medium text-[#25312C]/75 text-center leading-tight mt-1">
-                    Doses Recorded
+                  <p className="text-[11.5px] font-medium text-[#25312C]/80 text-center leading-tight mt-1">
+                    Care Plan
                     <br />
-                    Today
+                    Completion
                   </p>
                 </div>
 
-                {/* Truthful Status Checklist */}
+                {/* Status Checklist */}
                 <div className="flex-1 space-y-2.5">
                   <button
                     type="button"
@@ -429,7 +392,9 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                       <Check className="w-3 h-3 text-white stroke-[3]" />
                     </span>
                     <span className="text-[13px] font-medium text-[#25312C] group-hover:text-[#153D32] tabular-nums">
-                      {takenDosesCount} of {totalDosesCount} Medicines Taken
+                      {overviewRange === 'Today' || !activePlan?.isDemo
+                        ? `${takenDosesCount} of ${totalDosesCount} Medicines Taken`
+                        : 'Medicines Followed'}
                     </span>
                   </button>
 
@@ -442,8 +407,9 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                       <Check className="w-3 h-3 text-white stroke-[3]" />
                     </span>
                     <span className="text-[13px] font-medium text-[#25312C] group-hover:text-[#153D32] tabular-nums">
-                      {appointmentsKeptCount} of {totalAppointmentsCount}{' '}
-                      Appointments Kept
+                      {!activePlan?.isDemo
+                        ? `${appointmentsKeptCount} of ${totalAppointmentsCount} Appointments Kept`
+                        : 'Appointments Kept'}
                     </span>
                   </button>
 
@@ -455,8 +421,16 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                     <span className="w-5 h-5 rounded-full bg-[#E5E8DE] flex items-center justify-center shrink-0">
                       <Clock className="w-3 h-3 text-[#25312C]/70" />
                     </span>
-                    <span className="text-[13px] text-[#25312C]/75 group-hover:text-[#153D32] tabular-nums">
-                      Next Follow-up: {recentPlan.followUpDate}
+                    <span className="text-[13px] text-[#25312C]/75 group-hover:text-[#153D32] leading-snug">
+                      {activePlan?.isDemo ? (
+                        <>
+                          Next Follow-up
+                          <br />
+                          in 7 Days
+                        </>
+                      ) : (
+                        `Next Follow-up: ${recentPlan.followUpDate}`
+                      )}
                     </span>
                   </button>
                 </div>
@@ -473,10 +447,35 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         {/* Bottom Row: Your Health Our Priority | Medicine Schedule | Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-5 items-stretch">
           {/* C. Your Health Our Priority */}
-          <section className="md:col-span-1 lg:col-span-3 rounded-[20px] bg-gradient-to-b from-[#E5EFE3] via-[#EEF4EC] to-[#D9E8D7] border border-[#D4E2D2] p-5 flex flex-col items-center justify-between text-center relative overflow-hidden shadow-[0_1px_8px_rgba(21,61,50,0.03)]">
-            <MedicalShieldIllustration className="w-24 h-24 mt-1" />
-            <div className="my-2">
-              <h2 className="font-display text-[22px] font-semibold text-[#153D32] leading-tight">
+          <section className="md:col-span-1 lg:col-span-3 rounded-[20px] bg-gradient-to-b from-[#E7EFE3] via-[#EFF5EC] to-[#D4E5D0] border border-[#D4E2D2] p-5 flex flex-col items-center justify-between text-center relative overflow-hidden shadow-[0_1px_8px_rgba(21,61,50,0.03)]">
+            {/* Subtle Botanical Leaves Framing Card Edges */}
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 240 240"
+              className="pointer-events-none absolute inset-0 w-full h-full opacity-55"
+              preserveAspectRatio="none"
+            >
+              <path
+                d="M0 120C22 108 38 118 44 142C22 146 6 138 0 120Z"
+                fill="#8BBD8E"
+              />
+              <path
+                d="M0 240C20 198 52 178 86 184C68 214 36 234 0 240Z"
+                fill="#9BC89D"
+              />
+              <path
+                d="M240 126C218 114 202 124 196 148C218 152 234 144 240 126Z"
+                fill="#8BBD8E"
+              />
+              <path
+                d="M240 240C220 198 188 178 154 184C172 214 204 234 240 240Z"
+                fill="#9BC89D"
+              />
+            </svg>
+
+            <MedicalShieldIllustration className="relative z-10 w-24 h-24 mt-1" />
+            <div className="relative z-10 my-2">
+              <h2 className="font-display text-[23px] font-semibold text-[#153D32] leading-tight">
                 Your Health
                 <br />
                 Our Priority
@@ -490,7 +489,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             <button
               type="button"
               onClick={() => onNavigate('warnings')}
-              className="inline-flex items-center gap-1.5 px-5 py-2 rounded-full bg-[#153D32] hover:bg-[#0E3025] text-white text-[12.5px] font-medium transition-colors cursor-pointer whitespace-nowrap"
+              className="relative z-10 inline-flex items-center gap-1.5 px-5 py-2 rounded-full bg-[#153D32] hover:bg-[#0E3025] text-white text-[12.5px] font-medium transition-colors cursor-pointer whitespace-nowrap"
             >
               <span>Learn More</span>
               <span aria-hidden="true">→</span>
@@ -501,15 +500,10 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           <section className="md:col-span-2 lg:col-span-6 lg:order-2 bg-white border border-[#EAECE6] rounded-[20px] p-5 flex flex-col justify-between shadow-[0_1px_8px_rgba(21,61,50,0.03)]">
             <div className="flex items-center justify-between mb-3.5">
               <div className="flex items-center gap-2.5">
-                <CalendarCheck className="w-5 h-5 text-[#153D32]" />
+                <CalendarCheck className="w-5 h-5 text-[#1E6B47]" />
                 <h2 className="font-sans text-[17px] font-semibold text-[#153D32]">
                   Medicine Schedule
                 </h2>
-                {activePlan?.isDemo && (
-                  <span className="px-2 py-0.5 rounded bg-[#F7F4EA] text-[#8C6514] text-[10px] font-semibold">
-                    Demo
-                  </span>
-                )}
               </div>
               <button
                 type="button"
@@ -673,15 +667,15 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
       {/* ==================== MOBILE DASHBOARD (< md) ==================== */}
       <div className="md:hidden space-y-4">
         {/* Compact Mobile Hero */}
-        <section className="relative rounded-2xl overflow-hidden border border-[#E2E8DC] bg-[#F7F4EA] p-4 min-h-[192px] flex items-center">
+        <section className="relative rounded-2xl overflow-hidden border border-[#E2E8DC] bg-[#F6F4EA] p-4 min-h-[196px] flex items-center">
           <img
-            src="/assets/chikitsak-hero.png"
-            alt="Doctor explaining discharge summary instructions to an elderly patient"
-            className="absolute inset-0 w-full h-full object-cover object-[72%_18%]"
+            src={heroConsultationImg}
+            alt="Doctor holding patient hand and explaining discharge instructions"
+            className="absolute inset-0 w-full h-full object-cover object-[76%_24%]"
           />
           <div
             aria-hidden="true"
-            className="absolute inset-0 bg-gradient-to-r from-[#F7F4EA] via-[#F7F4EA]/92 via-48% to-transparent"
+            className="absolute inset-0 bg-gradient-to-r from-[#F6F4EA] via-[#F6F4EA]/92 via-48% to-transparent"
           />
           <div className="relative z-10 max-w-[66%]">
             <h1 className="font-display text-[21px] font-semibold text-[#153D32] leading-[1.15]">
@@ -704,23 +698,6 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           </div>
         </section>
 
-        {/* Mobile Demo Notice */}
-        {hasDemoRecords && (
-          <div className="rounded-xl bg-[#F7F4EA] border border-[#E5DEC9] px-3 py-2 flex items-center justify-between gap-2 text-[11.5px]">
-            <span className="text-[#25312C]/85">
-              <strong className="text-[#8C6514]">Demo Data:</strong> Sample care
-              records loaded
-            </span>
-            <button
-              type="button"
-              onClick={onClearDemoData}
-              className="font-medium text-[#153D32] underline shrink-0"
-            >
-              Clear
-            </button>
-          </div>
-        )}
-
         {/* 2-Column Quick Access Cards */}
         <section className="grid grid-cols-2 gap-3">
           <button
@@ -728,8 +705,8 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             onClick={() => onNavigate('care-plans')}
             className="bg-white border border-[#EAECE6] rounded-2xl p-4 flex flex-col items-center justify-center text-center gap-2 shadow-xs cursor-pointer min-h-[104px]"
           >
-            <div className="w-10 h-10 rounded-full bg-[#EAF1E7] flex items-center justify-center">
-              <FileText className="w-5 h-5 text-[#153D32]" />
+            <div className="w-10 h-10 rounded-full bg-[#E6F2E8] flex items-center justify-center">
+              <FileText className="w-5 h-5 text-[#1E6B47]" />
             </div>
             <span className="text-[13px] font-medium text-[#153D32] leading-tight">
               My Care Plans
@@ -741,8 +718,8 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             onClick={() => onNavigate('medicines')}
             className="bg-white border border-[#EAECE6] rounded-2xl p-4 flex flex-col items-center justify-center text-center gap-2 shadow-xs cursor-pointer min-h-[104px]"
           >
-            <div className="w-10 h-10 rounded-full bg-[#EAF1E7] flex items-center justify-center">
-              <CalendarCheck className="w-5 h-5 text-[#153D32]" />
+            <div className="w-10 h-10 rounded-full bg-[#E6F2E8] flex items-center justify-center">
+              <CalendarCheck className="w-5 h-5 text-[#1E6B47]" />
             </div>
             <span className="text-[13px] font-medium text-[#153D32] leading-tight">
               Medicine Schedule
@@ -759,8 +736,8 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                 {unreadRemindersCount}
               </span>
             )}
-            <div className="w-10 h-10 rounded-full bg-[#EAF1E7] flex items-center justify-center">
-              <Bell className="w-5 h-5 text-[#153D32]" />
+            <div className="w-10 h-10 rounded-full bg-[#E6F2E8] flex items-center justify-center">
+              <Bell className="w-5 h-5 text-[#1E6B47]" />
             </div>
             <span className="text-[13px] font-medium text-[#153D32] leading-tight">
               Reminders
@@ -772,8 +749,8 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             onClick={() => onNavigate('voice')}
             className="bg-white border border-[#EAECE6] rounded-2xl p-4 flex flex-col items-center justify-center text-center gap-2 shadow-xs cursor-pointer min-h-[104px]"
           >
-            <div className="w-10 h-10 rounded-full bg-[#EAF1E7] flex items-center justify-center">
-              <AudioLines className="w-5 h-5 text-[#153D32]" />
+            <div className="w-10 h-10 rounded-full bg-[#E6F2E8] flex items-center justify-center">
+              <AudioLines className="w-5 h-5 text-[#1E6B47]" />
             </div>
             <span className="text-[13px] font-medium text-[#153D32] leading-tight">
               Voice Guide
@@ -785,7 +762,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         <button
           type="button"
           onClick={() => onNavigate('medicines')}
-          className="w-full text-left bg-white border border-[#EAECE6] rounded-2xl p-4 shadow-xs cursor-pointer"
+          className="w-full text-left bg-[#EAF2E8]/75 border border-[#DCE9DC] rounded-2xl p-4 shadow-xs cursor-pointer"
         >
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-sans text-[15.5px] font-semibold text-[#153D32]">
@@ -803,7 +780,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                     cy="47"
                     r={ringRadius}
                     fill="none"
-                    stroke="#EAF1E7"
+                    stroke="#DCE9DC"
                     strokeWidth="9"
                   />
                   <circle
@@ -811,7 +788,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                     cy="47"
                     r={ringRadius}
                     fill="none"
-                    stroke="#153D32"
+                    stroke="#1E6B47"
                     strokeWidth="9"
                     strokeLinecap="round"
                     strokeDasharray={ringCircumference}
@@ -819,17 +796,14 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                   />
                 </svg>
                 <span className="absolute text-[15px] font-bold text-[#153D32] tabular-nums">
-                  {completionPercent}%
+                  {displayedCompletionPercent}%
                 </span>
               </div>
               <div>
                 <p className="text-[12.5px] font-medium text-[#25312C]/80 leading-snug">
-                  Doses Recorded
+                  Care Plan
                   <br />
-                  Today
-                </p>
-                <p className="text-[11px] text-[#25312C]/60 tabular-nums mt-0.5">
-                  {takenDosesCount} of {totalDosesCount} taken
+                  Completion
                 </p>
               </div>
             </div>
@@ -865,8 +839,11 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               className="w-full text-left rounded-xl bg-[#FAFBF8] border border-[#ECEEE8] p-3 flex items-center justify-between gap-3 cursor-pointer"
             >
               <div className="flex items-center gap-3 min-w-0">
-                <div className="w-10 h-10 rounded-xl bg-[#EAF1E7] flex items-center justify-center shrink-0">
-                  <FileCheck2 className="w-5 h-5 text-[#153D32]" />
+                <div className="relative w-10 h-10 rounded-xl bg-[#E7F2E8] flex items-center justify-center shrink-0">
+                  <FileText className="w-5 h-5 text-[#1E6B47]" />
+                  <span className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-[#1E7E4E] text-white flex items-center justify-center ring-2 ring-[#FAFBF8]">
+                    <Check className="w-2.5 h-2.5 stroke-[3]" />
+                  </span>
                 </div>
                 <div className="min-w-0">
                   <p className="text-[13.5px] font-semibold text-[#153D32] truncate">
@@ -877,8 +854,8 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                   </p>
                 </div>
               </div>
-              <span className="px-2.5 py-1 rounded-full bg-[#EAF1E7] text-[#153D32] text-[11px] font-medium shrink-0">
-                {recentPlan.isDemo ? 'Demo' : recentPlan.status}
+              <span className="px-2.5 py-1 rounded-full bg-[#DCF0E2] text-[#1E6B47] text-[11px] font-medium shrink-0">
+                {recentPlan.status}
               </span>
             </button>
           ) : (
